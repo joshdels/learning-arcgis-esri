@@ -1,0 +1,175 @@
+<html>
+
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+  <title>Calcite components: Create a mapping app with web components</title>
+
+  <script type="module" src="https://js.arcgis.com/5.0/"></script>
+
+</head>
+
+<style>
+
+  html,
+  body,
+  #mapEl {
+    padding: 0;
+    margin: 0;
+    height: 100%;
+    width: 100%;
+    display: flex;
+  }
+
+
+  #logo-icon {
+    align-self: center;
+    height: auto;
+    margin-inline-start: 0.5rem;
+  }
+
+  #shell-panel-nav {
+    --calcite-shell-panel-min-width: 5rem;
+  }
+
+  @media (max-width: 400px) {
+    #shell-panel-nav {
+      --calcite-shell-panel-min-width: 80vw;
+    }
+  }
+
+  calcite-block[data-block-id] {
+    max-height: 50vh;
+    overflow-y: auto;
+  }
+
+
+  #card-heading {
+    font-size: var(--calcite-font-size-md);
+  }
+
+  #card-description {
+    font-size: var(--calcite-font-size);
+  }
+
+  #card-tags {
+    flex-wrap: wrap;
+  }
+
+
+</style>
+
+<body>
+
+  <calcite-shell content-behind>
+
+    <calcite-shell-panel id="shell-panel-nav" slot="panel-end" display-mode="float" height="l">
+
+      <calcite-panel id="app-heading" hidden>
+        <calcite-icon id="logo-icon" slot="header-actions-start" icon="explore" text-label="explore"></calcite-icon>
+        <calcite-action-bar id="map-actions" slot="action-bar" layout="horizontal" expand-disabled>
+          <calcite-action icon="layers" text="Layers" data-action-id="layers"></calcite-action>
+          <calcite-action icon="basemap" text="Basemaps" data-action-id="basemaps"></calcite-action>
+          <calcite-action icon="legend" text="Legend" data-action-id="legend"></calcite-action>
+          <calcite-action icon="bookmark" text="Bookmarks" data-action-id="bookmarks"></calcite-action>
+          <calcite-action icon="print" text="Print" data-action-id="print"></calcite-action>
+          <calcite-action icon="information" text="About" data-action-id="information"></calcite-action>
+        </calcite-action-bar>
+      </calcite-panel>
+
+      <!-- Map-specific blocks containing ArcGIS Maps SDK for JavaScript components -->
+      <calcite-block expanded heading="Layers" data-block-id="layers" hidden>
+        <arcgis-layer-list drag-enabled reference-element="mapEl" visibility-appearance="checkbox"></arcgis-layer-list>
+      </calcite-block>
+
+      <calcite-block expanded heading="Basemaps" data-block-id="basemaps" hidden>
+        <arcgis-basemap-gallery reference-element="mapEl"></arcgis-basemap-gallery>
+      </calcite-block>
+      <calcite-block expanded heading="Legend" data-block-id="legend" hidden>
+        <arcgis-legend legend-style="classic" reference-element="mapEl"></arcgis-legend>
+      </calcite-block>
+      <calcite-block expanded heading="Bookmarks" data-block-id="bookmarks" hidden>
+        <arcgis-bookmarks editing-enabled="false" reference-element="mapEl"></arcgis-bookmarks>
+      </calcite-block>
+      <calcite-block expanded heading="Print" data-block-id="print" hidden>
+        <arcgis-print allowed-formats="all" allowed-layouts="all" include-default-templates="false"
+          reference-element="mapEl"></arcgis-print>
+      </calcite-block>
+
+      <!-- Info block (populates with info from the web map) -->
+      <calcite-block expanded heading="About the data" data-block-id="information" hidden>
+        <calcite-card id="card-content">
+          <img id="card-thumbnail" alt="Webmap thumbnail" slot="thumbnail" />
+          <div id="card-heading" slot="heading">
+  
+          </div>
+          <div id="card-description" slot="description">
+    
+          </div>
+          <div id="card-tags" slot="footer-end">
+        
+          </div>
+        </calcite-card>
+      </calcite-block>
+
+    </calcite-shell-panel>
+
+    <!-- Actual map -->
+    <arcgis-map id="mapEl" item-id="03d584a7c9874b44821c6a766c3bbc11">
+      <arcgis-zoom slot="top-left"></arcgis-zoom>
+    </arcgis-map>
+
+  </calcite-shell>
+
+  <calcite-loader label="Loading" text="Please wait..." id="app-loader"></calcite-loader>
+
+</body>
+
+<script type="module">
+
+  const mapEl = document.getElementById("mapEl");
+
+  mapEl.addEventListener("arcgisViewReadyChange", () => {
+    const { title, thumbnailUrl, snippet, modified, tags } = mapEl.map.portalItem;
+    document.getElementById("app-heading").heading = `${title} Explorer`;
+    document.getElementById("card-heading").innerHTML = title;
+    document.getElementById("card-thumbnail").src = thumbnailUrl;
+    document.getElementById("card-description").innerHTML = `<p>${snippet}</p><p>Last modified on ${modified}.</p>`;
+    tags.forEach(tag => {
+      document.getElementById("card-tags").innerHTML += `<calcite-chip>${tag}</calcite-chip>`;
+    });
+
+  document.getElementById("app-loader").hidden = true;
+  document.getElementById("app-heading").removeAttribute("hidden");
+
+  });
+
+  let activeWidget;
+  const handleActionBarClick = ({ target }) => {
+    if (target.tagName !== "CALCITE-ACTION") {
+      return;
+    }
+    
+    if (activeWidget) {
+      document.querySelector(`[data-action-id=${activeWidget}]`).active = false;
+      document.querySelector(`[data-block-id=${activeWidget}]`).hidden = true;
+    }
+    const nextWidget = target.dataset.actionId;
+    if (nextWidget !== activeWidget) {
+      document.querySelector(`[data-action-id=${nextWidget}]`).active = true;
+      document.querySelector(`[data-block-id=${nextWidget}]`).hidden = false;
+      activeWidget = nextWidget;
+    } else {
+      activeWidget = null;
+    }
+  };
+
+  document.querySelector("calcite-action-bar").addEventListener("click", handleActionBarClick);
+
+
+
+</script>
+
+
+</html>

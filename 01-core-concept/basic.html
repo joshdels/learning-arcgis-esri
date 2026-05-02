@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script
+      type="module"
+      src="https://js.arcgis.com/calcite-components/5.0"
+    ></script>
+    <link rel="stylesheet" href="basic.css" />
+  </head>
+  <body>
+    <!-- Core Concepts -->
+    <calcite-action-bar layout="horizontal">
+      <calcite-action text="Add" icon="plus" text-enabled></calcite-action>
+      <calcite-action text="Save" icon="save" text-enabled></calcite-action>
+      <calcite-tooltip slot="expand-tooltip">Toggle Action Bar</calcite-tooltip>
+    </calcite-action-bar>
+
+    <!-- button -->
+    <calcite-button label="Add new folder" icon-start="folder-plus"
+      >button daw</calcite-button
+    >
+
+    <!--  -->
+    <!-- Do specify boolean attributes by name -->
+    <calcite-button disabled icon-start="folder-plus"
+      >A disabled button</calcite-button
+    >
+    <calcite-button>A non-disabled button</calcite-button>
+
+    <!-- Form -->
+
+    <form>
+      <calcite-label>
+        Observation date:
+        <calcite-input-date-picker
+          name="observation-date"
+        ></calcite-input-date-picker>
+      </calcite-label>
+      <calcite-label>
+        Observation notes:
+        <calcite-text-area
+          name="observation-notes"
+          placeholder="Observation notes"
+          max-length="250"
+        ></calcite-text-area>
+      </calcite-label>
+      <calcite-button type="submit">Submit</calcite-button>
+    </form>
+  </body>
+</html>

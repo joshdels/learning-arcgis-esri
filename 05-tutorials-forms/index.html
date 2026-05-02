@@ -1,0 +1,155 @@
+ <html>
+   <head>
+     <meta charset="utf-8" />
+     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+     <title>Calcite components: Construct a registration form with validation</title>
+     <script type="module" src="https://js.arcgis.com/calcite-components/5.0"></script>
+   </head>
+   <style>
+     body {
+       background: var(--calcite-color-background);
+     }
+
+     calcite-dialog {
+       --calcite-dialog-size-x: 400px;
+     }
+   </style>
+   <body>
+
+      <calcite-dialog open id="sign-up-dialog" heading="Sign ups" width="s" close-disabled outside-close-disabled escape-disabled>
+        <form id="sign-up-form">
+
+            <!-- Email -->
+            <calcite-label>
+              Email address
+              <calcite-input id="email" name="email" type="email" placeholder="email@example.com" required validation-message="Please enter a valid email. (e.g., email@example.com)"></calcite-input>
+            </calcite-label>
+
+            <!-- Username -->
+            <calcite-label>
+              Username
+              <calcite-input id="username" name="username" type="text" placeholder="Your username" minlength="3" maxlength="20" pattern="^[A-Za-z0-9_]{3,20}$" required validation-message="A username is required."></calcite-input>
+            </calcite-label>
+
+            <!-- Password -->
+            <calcite-label>
+              Password
+              <calcite-input id="password" name="password" type="password" placeholder="Create a password" minlength="8" pattern="^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&_*\-])[A-Za-z\d#?!@$%^&_*\-]{8,}$" required validation-message="A password is required."></calcite-input>
+            </calcite-label>
+
+            <!-- Confirm Password -->
+            <calcite-label>
+              Confirm password
+              <calcite-input id="confirm-password" name="confirmPassword" type="password" placeholder="Re-enter password" required validation-message="Both passwords must match."></calcite-input>
+            </calcite-label>
+
+            <!-- Submit form button-->
+            
+          </form>
+          <calcite-button id="submit-button" type="submit" form="sign-up-form" slot="footer" width="full">Sign up</calcite-button>
+          <calcite-alert id="success-alert" icon="check-circle" kind="success" scale="s" auto-close auto-close-duration="fast">
+        <div slot="title">You've successfully signed up!</div>
+      </calcite-alert>
+     
+        </calcite-dialog>
+   </body>
+   <script>
+        const form = document.getElementById("sign-up-form");
+        const emailInput = document.getElementById("email");
+        const usernameInput = document.getElementById("username");
+        const passwordInput = document.getElementById("password");
+        const confirmPasswordInput = document.getElementById("confirm-password");
+        const submitButton = document.getElementById("submit-button");
+        const successAlert = document.getElementById("success-alert");
+
+        function setFieldValidation(
+          field,
+          message,
+          icon = "exclamation-mark-triangle"
+        ) {
+          if (message) {
+            field.status = "invalid";
+            field.validationMessage = message;
+            field.validationIcon = icon;
+          } else {
+            field.status = "idle";
+            field.validationMessage = "";
+            field.validationIcon = null;
+          }
+        }
+
+        // Email required validation check on blur
+        emailInput.addEventListener("blur", () => {
+          const value = emailInput.value;
+
+          if (!value) {
+            setFieldValidation(emailInput, "An email is required.");
+          } else {
+            setFieldValidation(emailInput, "");
+          }
+        });
+
+        // Username required and pattern match validation checks on blur
+        usernameInput.addEventListener("blur", () => {
+          const value = usernameInput.value;
+          const pattern = /^[A-Za-z0-9_]{3,20}$/;
+
+          if (!value) {
+            setFieldValidation(usernameInput, "A username is required.");
+          } else if (!pattern.test(value)) {
+            setFieldValidation(
+              usernameInput,
+              "Username must be 3 to 20 characters, using a combination of letters, numbers, or underscores."
+            );
+          } else {
+            setFieldValidation(usernameInput, "");
+          }
+        });
+
+        // Password required and pattern match validation checks on blur
+        passwordInput.addEventListener("blur", () => {
+          const value = passwordInput.value;
+          const pattern = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&_*\-]).{8,}$/;
+
+          if (!value) {
+            setFieldValidation(passwordInput, "A password is required.");
+          } else if (!pattern.test(value)) {
+            setFieldValidation(
+              passwordInput,
+              "The password must be 8 or more characters and include uppercase, lowercase, number, and special characters."
+            );
+          } else {
+            setFieldValidation(passwordInput, "");
+          }
+        });
+
+        // Confirm password match validation on blur
+        confirmPasswordInput.addEventListener("blur", () => {
+          const value = confirmPasswordInput.value;
+
+          if (!value) {
+            setFieldValidation(
+              confirmPasswordInput,
+              "A password confirmation is required."
+            );
+          } else if (value !== passwordInput.value) {
+            setFieldValidation(confirmPasswordInput, "The passwords do not match.");
+          } else {
+            setFieldValidation(confirmPasswordInput, "");
+          }
+        });
+
+        form.addEventListener("submit", (event) => {
+          event.preventDefault();
+
+          if (form.checkValidity()) {
+            successAlert.open = true;
+            form.reset();
+          }
+        });
+
+        successAlert.addEventListener("calciteAlertClose", () => {
+          emailInput.setFocus();
+        });
+   </script>
+ </html>

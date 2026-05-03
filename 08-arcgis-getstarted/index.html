@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script type="module" src="https://js.arcgis.com/5.0/"></script>
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <arcgis-map item-id="02b37471d5d84cacbebcccd785460e94">
+      <arcgis-zoom slot="top-left"></arcgis-zoom>
+    </arcgis-map>
+  </body>
+  <script type="module">
+    const Graphic = await $arcgis.import("@arcgis/core/Graphic.js");
+    const viewElement = document.querySelector("arcgis-map");
+    // Wait for the view to be ready before adding additional functionality
+    await viewElement.viewOnReady();
+
+    // ...
+
+    // Create a graphic and add the geometry and symbol to it
+    const pointGraphic = new Graphic({
+      geometry: point, // A point geometry
+      symbol: markerSymbol, // A symbol for drawing the point
+    });
+    viewElement.graphics.add(pointGraphic);
+  </script>
+</html>

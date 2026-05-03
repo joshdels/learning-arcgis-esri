@@ -1,0 +1,51 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <title>Calcite components: Core concepts</title>
+
+    <script type="module" src="https://js.arcgis.com/5.0/"></script>
+
+    <style>
+      html,
+      body,
+      #mapEl {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+
+      :root {
+        --calcite-shell-border-color: red;
+      }
+    </style>
+  </head>
+  <body>
+    <calcite-shell>
+      <calcite-navigation slot="header">
+        <calcite-navigation-logo
+          heading="Joshua Application"
+          icon="launch"
+          alt="Application logo"
+          slot="logo"
+        >
+        </calcite-navigation-logo>
+      </calcite-navigation>
+
+      <calcite-shell-panel slot="panel-start">
+        <calcite-block heading="Josh starting" collapsible>
+          <calcite-button icon-end="launch"> Open now </calcite-button>
+        </calcite-block>
+      </calcite-shell-panel>
+
+      <arcgis-map
+        item-id="05e015c5f0314db9a487a9b46cb37eca"
+        zoom="11"
+      ></arcgis-map>
+    </calcite-shell>
+  </body>
+</html>

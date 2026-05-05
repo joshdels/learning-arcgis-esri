@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Parcel Decision Map - Victoria MVP</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css">
+    <script src="https://js.arcgis.com/4.31/"></script>
+
+    <style>
+        html, body, #viewDiv {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+            width: 100%;
+            font-family: Arial, sans-serif;
+        }
+
+        #infoPanel {
+            position: absolute;
+            top: 15px;
+            left: 60px;
+            z-index: 10;
+            background: white;
+            padding: 12px;
+            width: 280px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+            font-size: 14px;
+        }
+
+        #infoPanel h3 {
+            margin: 0 0 8px 0;
+        }
+
+        #hint {
+            font-size: 12px;
+            color: #555;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="viewDiv"></div>
+
+    <div id="infoPanel">
+        <h3>Parcel Decision Map</h3>
+        <div><b>Current extent:</b></div>
+        <div>Parcels loaded: <span id="parcelCount">...</span></div>
+        <div>Zones loaded: <span id="zoneCount">...</span></div>
+        <div>Flood areas loaded: <span id="floodCount">...</span></div>
+        <div id="hint">Zoom in and click parcels, zones, or flood areas.</div>
+    </div>
+
+    <script>
+        require([
+            "esri/Map",
+            "esri/views/MapView",
+            "esri/layers/FeatureLayer",
+            "esri/widgets/Legend",
+            "esri/widgets/LayerList",
+            "esri/widgets/Expand",
+            "esri/core/reactiveUtils"
+        ], function (
+            Map,
+            MapView,
+            FeatureLayer,
+            Legend,
+            LayerList,
+            Expand,
+            reactiveUtils
+        ) {
+
+            // -----------------------------
+            // MAP
+            // -----------------------------
+            const map = new Map({
+                basemap: "osm"
+            });
+
+            const view = new MapView({
+                container: "viewDiv",
+                map: map,
+                center: [144.9631, -37.8136], // Melbourne
+                zoom: 15
+            });
+
+            // -----------------------------
+            // REAL PUBLIC DATA LAYERS
+            // -----------------------------
+
+            const parcelsLayer = new FeatureLayer({
+                title: "VicPlan Parcels",
+                url: "https://plan-gis.mapshare.vic.gov.au/arcgis/rest/services/Planning/VicPlan_PropertyAndParcel/MapServer/4",
+                outFields: ["*"],
+                minScale: 10000,
+                popupTemplate: {
+                    title: "Parcel: {PARCEL_SPI}",
+                    content: `
+                        <b>Parcel SPI:</b> {PARCEL_SPI}<br>
+                        <b>Parcel ID:</b> {PARCEL_ID}<br>
+                        <b>Lot number:</b> {PARCEL_LOT_NUMBER}<br>
+                        <b>Plan number:</b> {PARCEL_PLAN_NUMBER}<br>
+                        <b>LGA code:</b> {PARCEL_LGA_CODE}<br>
+                        <b>Area:</b> {Shape_Area} m²<br><br>
+                        <b>Decision idea:</b><br>
+                        Check this parcel against zoning and flood layers.
+                    `
+                },
+                renderer: {
+                    type: "simple",
+                    symbol: {
+                        type: "simple-fill",
+                        color: [0, 0, 0, 0],
+                        outline: {
+                            color: [30, 30, 30, 0.9],
+                            width: 0.8
+                        }
+                    }
+                }
+            });
+
+            const zonesLayer = new FeatureLayer({
+                title: "Planning Zones",
+                url: "https://plan-gis.mapshare.vic.gov.au/arcgis/rest/services/Planning/Vicplan_PlanningSchemeZones/MapServer/0",
+                outFields: ["*"],
+                opacity: 0.35,
+                popupTemplate: {
+                    title: "Zone: {ZONE_CODE}",
+                    content: `
+                        <b>Zone:</b> {ZONE_CODE}<br>
+                        <b>Description:</b> {ZONE_DESCRIPTION}<br>
+                        <b>Group:</b> {ZONE_CODE_GROUP_LABEL}<br>
+                        <b>LGA:</b> {LGA}<br>
+                        <b>Scheme:</b> {SCHEME_CODE}
+                    `
+                },
+                renderer: {
+                    type: "simple",
+                    symbol: {
+                        type: "simple-fill",
+                        color: [255, 190, 0, 0.35],
+                        outline: {
+                            color: [180, 120, 0, 0.8],
+                            width: 0.5
+                        }
+                    }
+                }
+            });
+
+            const floodLayer = new FeatureLayer({
+                title: "Flood Extent - 1 in 100 Year",
+                url: "https://emapdev.ffm.vic.gov.au/arcgis/rest/services/Victorian_Flood_Database/MapServer/14",
+                outFields: ["*"],
+                opacity: 1,
+                popupTemplate: {
+                    title: "Flood Area",
+                    content: `
+                        <b>ARI:</b> {ARI}<br>
+                        <b>Study ARI:</b> {STUDYARI}<br>
+                        <b>Method:</b> {METHOD}<br>
+                        <b>Reliability:</b> {RELIABILITY}<br>
+                        <b>Source:</b> {SOURCE}<br>
+                        <b>Area:</b> {AREA_SM} m²<br><br>
+                        <b>Decision idea:</b><br>
+                        If this overlaps a parcel, mark it as "Needs deeper analysis" or "High risk".
+                    `
+                },
+                renderer: {
+                    type: "simple",
+                    symbol: {
+                        type: "simple-fill",
+                        color: [40, 120, 255, 0.45],
+                        outline: {
+                            color: [0, 70, 180, 0.8],
+                            width: 0.5
+                        }
+                    }
+                }
+            });
+
+            map.addMany([
+                zonesLayer,
+                floodLayer,
+                parcelsLayer
+            ]);
+
+            view.on("click", async function (event) {
+                const hit = await view.hitTest(event);
+
+                const parcelHit = hit.results.find(function (result) {
+                    return result.graphic.layer === parcelsLayer;
+                });
+
+                if (!parcelHit) {
+                    return;
+                }
+
+                const parcelGraphic = parcelHit.graphic;
+                const parcelAttributes = parcelGraphic.attributes;
+                const parcelGeometry = parcelGraphic.geometry;
+
+                const floodQuery = floodLayer.createQuery();
+                floodQuery.geometry = parcelGeometry;
+                floodQuery.spatialRelationship = "intersects";
+                floodQuery.returnGeometry = false;
+                floodQuery.outFields = ["*"];
+                floodQuery.where = "1=1";
+
+                const floodResult = await floodLayer.queryFeatures(floodQuery);
+
+                let hasFloodRisk = false;
+
+                if (floodResult.features.length > 0) {
+                    hasFloodRisk = true;
+                }
+
+                let decision = "GO";
+                let decisionText = "No flood overlap found in the current flood layer.";
+
+                if (hasFloodRisk === true) {
+                    decision = "NEEDS DEEPER ANALYSIS";
+                    decisionText = "This parcel overlaps with a flood risk area.";
+                }
+
+                view.popup.open({
+                    title: "Parcel Decision: " + parcelAttributes.PARCEL_SPI,
+                    location: event.mapPoint,
+                    content:
+                        "<b>Parcel SPI:</b> " + parcelAttributes.PARCEL_SPI + "<br>" +
+                        "<b>Lot number:</b> " + parcelAttributes.PARCEL_LOT_NUMBER + "<br>" +
+                        "<b>Plan number:</b> " + parcelAttributes.PARCEL_PLAN_NUMBER + "<br>" +
+                        "<b>Area:</b> " + parcelAttributes.Shape_Area + " m²<br><br>" +
+                        "<b>Flood overlap:</b> " + hasFloodRisk + "<br>" +
+                        "<b>Flood features found:</b> " + floodResult.features.length + "<br><br>" +
+                        "<b>Decision:</b> " + decision + "<br>" +
+                        decisionText
+                });
+            });
+
+            // -----------------------------
+            // LEGEND + LAYER LIST
+            // -----------------------------
+
+            const legend = new Legend({
+                view: view
+            });
+
+            const legendExpand = new Expand({
+                view: view,
+                content: legend,
+                expanded: false
+            });
+
+            const layerList = new LayerList({
+                view: view
+            });
+
+            const layerListExpand = new Expand({
+                view: view,
+                content: layerList,
+                expanded: false
+            });
+
+            view.ui.add(legendExpand, "top-right");
+            view.ui.add(layerListExpand, "top-right");
+
+            // -----------------------------
+            // QUERY CURRENT VIEW EXTENT
+            // -----------------------------
+
+            async function countFeaturesInExtent(layer) {
+                const query = layer.createQuery();
+                query.geometry = view.extent;
+                query.spatialRelationship = "intersects";
+                query.returnGeometry = false;
+                query.where = "1=1";
+
+                try {
+                    return await layer.queryFeatureCount(query);
+                } catch (error) {
+                    console.warn("Could not query layer:", layer.title, error);
+                    return "n/a";
+                }
+            }
+
+            async function updateCounts() {
+                document.getElementById("parcelCount").innerText = "loading...";
+                document.getElementById("zoneCount").innerText = "loading...";
+                document.getElementById("floodCount").innerText = "loading...";
+
+                const parcelCount = await countFeaturesInExtent(parcelsLayer);
+                const zoneCount = await countFeaturesInExtent(zonesLayer);
+                const floodCount = await countFeaturesInExtent(floodLayer);
+
+                document.getElementById("parcelCount").innerText = parcelCount;
+                document.getElementById("zoneCount").innerText = zoneCount;
+                document.getElementById("floodCount").innerText = floodCount;
+            }
+
+            // Update counts after moving / zooming
+            reactiveUtils.when(
+                function () {
+                    return view.stationary === true;
+                },
+                function () {
+                    updateCounts();
+                }
+            );
+
+            view.when(function () {
+                updateCounts();
+            });
+
+        });
+    </script>
+</body>
+</html>
